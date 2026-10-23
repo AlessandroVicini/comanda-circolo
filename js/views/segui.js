@@ -17,7 +17,9 @@ export async function mount(main, [chiave]) {
     $('#s-nome', main).textContent = info.nome || 'Il tuo ordine';
     const l = Object.values(ordini);
     const n = l.find(o => o.num)?.num;
-    $('#s-num', main).innerHTML = n ? `<div class="tenue">Il tuo numero</div><div style="font-family:var(--font-t);font-size:4.5rem;font-weight:800;line-height:1">${esc(n)}</div>` : '';
+    const rit = l.find(o => o.ritiro)?.ritiro;
+    $('#s-num', main).innerHTML = (n ? `<div class="tenue">Il tuo numero</div><div style="font-family:var(--font-t);font-size:4.5rem;font-weight:800;line-height:1">${esc(n)}</div>` : '')
+      + (rit ? `<div class="asp-orario" style="font-size:1.1rem;margin-top:.5rem">🥡 Ritiro alle ${esc(rit)}</div>` : '');
     $('#s-ord', main).innerHTML = l.length ? l.map(o => htmlStatoOrdine(o)).join('') : '<div class="vuoto">Ordine non trovato o già concluso.</div>';
   };
   const un = [

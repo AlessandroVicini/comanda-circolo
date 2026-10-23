@@ -1,7 +1,7 @@
 // Operazioni di dominio: ordini, reparti, cassa, magazzino.
 import { db, get, set, update, newKey, transaction, inc, remove } from './db.js';
 import { S, serataVista } from './store.js';
-import { oggi, r2, toast } from './util.js';
+import { oggi, r2, toast, perAsporto, pezziDi, tsRitiro, codice } from './util.js';
 import { token } from './seed.js';
 
 const operatore = () => db.user?.email || 'staff';
@@ -44,9 +44,16 @@ function avvisoPatch(id, o, stato) {
   return {
     [`avvisi/${o.avviso}/ordini/${id}`]: {
       stato, num: o.num || null, tavolo: o.tavolo, serata: o.serata,
-      riepilogo: riepilogo(o.righe), ts: Date.now(),
+      riepilogo: riepilogo(o.righe), ts: Date.now(), ritiro: o.ritiro || null,
     },
   };
+}
+
+/* ---------- asporto: pizze prenotate per fascia ---------- */
+function patchFascia(o, segno) {
+  if (o.tavolo !== 'asporto' || !o.ritiro) return {};
+  const n = pezziDi(o.righe);
+  return n ? { [`pubblico/asporto/${o.serata}/${o.ritiro}`]: inc(segno * n) } : {};
 }
 
 /* ---------- magazzino ---------- */
@@ -92,22 +99,26 @@ export async function rettificaMagazzino(ing, contata, nota = '') {
 
 /* ---------- ordini ---------- */
 // righe: [{pid, nome, prezzo, qta, reparto, note}]
-export async function creaOrdineStaff({ tavolo, righe, nota = '', socio = '', origine = 'cameriere', pagato = false }) {
+export async function creaOrdineStaff({ tavolo, righe, nota = '', socio = '', origine = 'cameriere', pagato = false, cliente = null, ritiro = null }) {
   const serata = await assicuraSerata();
+  const asporto = tavolo === 'asporto';
+  if (asporto) righe = righe.filter(r => perAsporto(S.menu.prodotti?.[r.pid]));
   const id = newKey('ordini');
   const reparti = repartiDi(righe);
   const daPreparare = Object.keys(reparti).length > 0;
   const num = await prossimoNumero(serata);
-  const avviso = tavolo === 'banco' ? (daPreparare ? token() : null) : (S.qr[tavolo] || null);
+  const avviso = tavolo === 'banco' ? (daPreparare ? token() : null) : asporto ? codice() : (S.qr[tavolo] || null);
   const stato = daPreparare ? 'inviato' : (tavolo === 'banco' ? 'servito' : 'pronto');
   const o = {
     tavolo: String(tavolo), righe, nota, socio, origine, serata, num, stato, reparti,
     totale: totaleRighe(righe), pagato, creato: Date.now(), operatore: operatore(),
     scaricato: true, avviso,
   };
+  if (asporto) { o.cliente = cliente || {}; o.ritiro = ritiro; o.ritiroTs = tsRitiro(serata, ritiro); o.fasciaContata = true; }
   if (stato === 'pronto') o.prontoTs = Date.now();
   await update('', {
     [`ordini/${id}`]: o,
+    ...patchFascia(o, +1),
     ...avvisoPatch(id, o, stato === 'servito' ? 'ritirato' : stato),
     ...patchMagazzino(deltaMagazzino(righe, -1)),
   });
@@ -118,7 +129,7 @@ export async function creaOrdineStaff({ tavolo, righe, nota = '', socio = '', or
 export async function confermaOrdine(id) {
   const o = S.ordini[id]; if (!o || o.stato !== 'da_confermare') return;
   // ricalcola i prezzi dal menù (il cliente non può modificarli)
-  const righe = (o.righe || []).map(r => {
+  const righe = (o.righe || []).filter(r => o.tavolo !== 'asporto' || perAsporto(S.menu.prodotti?.[r.pid])).map(r => {
     const p = S.menu.prodotti?.[r.pid];
     return { ...r, nome: p?.nome || r.nome, prezzo: p ? Number(p.prezzo) : Number(r.prezzo) || 0, reparto: p ? (p.reparto || '') : (r.reparto || '') };
   });
@@ -132,6 +143,7 @@ export async function confermaOrdine(id) {
     [`ordini/${id}/stato`]: stato, [`ordini/${id}/totale`]: n.totale, [`ordini/${id}/confermato`]: n.confermato,
     [`ordini/${id}/operatore`]: n.operatore, [`ordini/${id}/scaricato`]: true,
     ...(n.prontoTs ? { [`ordini/${id}/prontoTs`]: n.prontoTs } : {}),
+    ...(o.tavolo === 'asporto' ? { [`ordini/${id}/ritiroTs`]: tsRitiro(o.serata, o.ritiro), [`ordini/${id}/fasciaContata`]: true, ...patchFascia(n, +1) } : {}),
     ...avvisoPatch(id, n, stato),
     ...patchMagazzino(deltaMagazzino(righe, -1)),
   });
@@ -145,6 +157,7 @@ export async function annullaOrdine(id, motivo = '') {
     [`ordini/${id}/scaricato`]: false,
     ...avvisoPatch(id, o, 'annullato'),
     ...(o.scaricato ? patchMagazzino(deltaMagazzino(o.righe, +1)) : {}),
+    ...(o.fasciaContata ? { [`ordini/${id}/fasciaContata`]: false, ...patchFascia(o, -1) } : {}),
   });
   aggiornaEsauriti();
 }

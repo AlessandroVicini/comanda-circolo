@@ -2,12 +2,13 @@ import { S, onStore, repartiLista } from '../store.js';
 import { db, update, get, demoReset, set } from '../db.js';
 import { seedTree } from '../seed.js';
 import { apriSerata, aggiornaEsauriti } from '../logic.js';
-import { esc, toast, conferma, modal, scarica, oggi, $ } from '../util.js';
+import { esc, toast, conferma, modal, scarica, oggi, $, cfgAsporto, parseNum } from '../util.js';
 
 export function mount(main) {
   main.innerHTML = `<div id="im"></div>`;
   const render = () => {
     const staff = Object.entries(S.staff || {}), rich = Object.entries(S.richieste || {}).filter(([u]) => !S.staff?.[u]);
+    const a = cfgAsporto(S.info);
     $('#im', main).innerHTML = `<div class="griglia g2" style="align-items:start">
       <div class="card"><h2>Il circolo</h2>
         <label class="campo">Nome mostrato a clienti e display<input id="im-nome" value="${esc(S.info.nome || '')}"></label>
@@ -17,6 +18,14 @@ export function mount(main) {
       <div class="card"><h2>Reparti</h2><p class="tenue">Ogni reparto ha la sua schermata con la coda delle preparazioni.</p>
         ${repartiLista().map(([k, r]) => `<div class="riga" style="margin-bottom:6px"><input class="cresci rep-n" data-k="${k}" value="${esc(r.nome)}"><button class="icona" data-togli-rep="${k}" aria-label="Elimina">✕</button></div>`).join('')}
         <div class="riga"><button class="btn piccolo" data-add-rep>+ Reparto</button><button class="btn piccolo primario" data-salva-rep>Salva reparti</button></div>
+      </div>
+      <div class="card"><h2>🥡 Asporto pizze</h2><p class="tenue">Solo i prodotti segnati "asporto" nel Menù (di base, le pizze). Il limite per fascia evita di intasare il forno.</p>
+        <label class="check"><input type="checkbox" id="ia-attivo" ${a.attivo ? 'checked' : ''}> Asporto attivo</label>
+        <label class="check"><input type="checkbox" id="ia-online" ${a.online ? 'checked' : ''}> I clienti possono ordinare da casa con il link</label>
+        <div class="riga"><label class="campo cresci">Primo ritiro<input id="ia-inizio" type="time" value="${esc(a.inizio)}"></label><label class="campo cresci">Ultimo ritiro<input id="ia-fine" type="time" value="${esc(a.fine)}"></label></div>
+        <div class="riga"><label class="campo cresci">Fasce ogni (min)<input id="ia-passo" inputmode="numeric" value="${a.passo}"></label><label class="campo cresci">Max pizze per fascia<input id="ia-max" inputmode="numeric" value="${a.maxPerFascia}"></label></div>
+        <label class="campo">Minuti di anticipo per infornare<input id="ia-anticipo" inputmode="numeric" value="${a.anticipo}"></label>
+        <div class="riga"><button class="btn primario" data-salva-asp>Salva asporto</button><a class="btn" href="#/qr">Link e QR per i clienti</a></div>
       </div>
       ${db.mode === 'firebase' && db.staff?.admin ? `<div class="card"><h2>Staff</h2>
         ${rich.length ? `<div class="avviso"><b>In attesa di abilitazione</b>${rich.map(([u, r]) => `<div class="riga sp" style="margin-top:.4rem"><span>${esc(r.email)}</span><span><button class="btn piccolo primario" data-abilita="${u}">Abilita</button> <button class="btn piccolo piatto" data-rifiuta="${u}">Rifiuta</button></span></div>`).join('')}</div>` : ''}
@@ -36,6 +45,12 @@ export function mount(main) {
     const b = e.target.closest('button'); if (!b) return;
     const d = b.dataset;
     if ('salva' in d) { await update('pubblico/info', { nome: $('#im-nome', main).value.trim(), msgPronto: $('#im-msg', main).value.trim() }); toast('Salvato', 'ok'); }
+    else if ('salvaAsp' in d) {
+      const v = id => $('#' + id, main);
+      await update('pubblico/info', { asporto: { attivo: v('ia-attivo').checked, online: v('ia-online').checked, inizio: v('ia-inizio').value || '19:00', fine: v('ia-fine').value || '22:00',
+        passo: Math.max(5, parseInt(v('ia-passo').value) || 15), maxPerFascia: Math.max(0, parseInt(v('ia-max').value) || 0), anticipo: Math.max(0, parseNum(v('ia-anticipo').value)) } });
+      toast('Asporto salvato', 'ok');
+    }
     else if ('addRep' in d) {
       const r = await modal({ titolo: 'Nuovo reparto', html: '<label class="campo">Nome<input name="n" placeholder="es. Griglia"></label>', azioni: [{ id: 'ok', label: 'Aggiungi', cls: 'primario' }] });
       const n = r?.form.n.trim(); if (!n) return;

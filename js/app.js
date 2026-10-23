@@ -18,6 +18,7 @@ const VISTE = {
   impostazioni:  { tit: 'Impostazioni',       em: '⚙️', file: 'impostazioni', gruppo: 'Gestione' },
   t:             { tit: 'Ordina',             file: 'cliente', pubblica: true },
   s:             { tit: 'Il tuo ordine',      file: 'segui',   pubblica: true },
+  a:             { tit: 'Pizze da asporto',   file: 'asporto', pubblica: true },
 };
 export { VISTE };
 

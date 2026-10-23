@@ -1,7 +1,7 @@
 import { S, onStore, tavoliLista } from '../store.js';
 import { update } from '../db.js';
 import { token } from '../seed.js';
-import { esc, qrSvg, baseUrl, toast, conferma, modal, $ } from '../util.js';
+import { esc, qrSvg, baseUrl, toast, conferma, modal, $, cfgAsporto } from '../util.js';
 
 export function mount(main) {
   main.innerHTML = `<div id="qr"></div>`;
@@ -14,6 +14,19 @@ export function mount(main) {
           <div class="riga"><button class="btn" data-aggiungi>+ Tavoli</button><button class="btn" data-rigenera>Rigenera tutti i QR</button><button class="btn primario" onclick="window.print()">🖨️ Stampa cartellini</button></div></div>
         ${!S.info.qrAttivo ? '<div class="avviso">L\'ordinazione dal QR è disattivata: i cartellini servono comunque ai clienti per ricevere l\'avviso "pronto". Puoi attivarla da Regia.</div>' : ''}
       </div>
+      ${(() => {
+        const a = cfgAsporto(S.info), link = S.qr.asporto ? `${baseUrl()}#/a/${S.qr.asporto}` : '';
+        return `<div class="card no-stampa" style="margin-bottom:14px"><div class="griglia g2" style="align-items:center">
+          <div><h2>🥡 Asporto da casa</h2>
+            ${link ? `<p class="tenue">Condividi questo link su WhatsApp, Facebook o sulla locandina: i clienti scelgono le pizze e l'orario di ritiro.</p>
+              ${a.online && a.attivo ? '' : '<div class="avviso">Ora gli ordini da casa sono disattivati: attivali in Impostazioni → Asporto.</div>'}
+              <p style="word-break:break-all"><code>${esc(link)}</code></p>
+              <div class="riga"><button class="btn primario" data-copia-asp>📋 Copia link</button><a class="btn" href="https://wa.me/?text=${encodeURIComponent('Ordina le pizze da asporto: ' + link)}" target="_blank" rel="noopener">Condividi su WhatsApp</a><button class="btn piatto" data-rigenera-asp>Rigenera link</button></div>`
+            : `<p class="tenue">Crea il link per far ordinare le pizze da asporto.</p><button class="btn primario" data-crea-asp>Crea link asporto</button>`}
+          </div>
+          ${link ? `<div class="cartellino" style="max-width:260px;justify-self:center"><div class="cn">${esc(S.info.nome || '')}</div><div class="tn" style="font-size:1.6rem">Pizze da asporto</div>${qrSvg(link, 200)}<p><b>Inquadra e ordina</b><br>poi passa a ritirare</p></div>` : ''}
+        </div></div>`;
+      })()}
       <div class="fogli-qr">${lista.map(([k, t]) => S.qr[k] ? `<div class="cartellino">
         <div class="cn">${esc(S.info.nome || '')}</div><div class="tn">Tavolo ${esc(t.nome || k)}</div>
         ${qrSvg(url(k), 200)}
@@ -24,7 +37,13 @@ export function mount(main) {
   main.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
     const d = b.dataset;
-    if ('aggiungi' in d) {
+    if ('creaAsp' in d || 'rigeneraAsp' in d) {
+      if ('rigeneraAsp' in d && !await conferma('Il link vecchio smetterà di funzionare: dovrai ricondividere quello nuovo.', 'Rigenera', 'rosso')) return;
+      await update('', { 'qr/asporto': token() + token(), ...(S.info.asporto ? {} : { 'pubblico/info/asporto': cfgAsporto(S.info) }) });
+      toast('Link asporto pronto', 'ok');
+    } else if ('copiaAsp' in d) {
+      try { await navigator.clipboard.writeText(`${baseUrl()}#/a/${S.qr.asporto}`); toast('Link copiato', 'ok'); } catch { toast('Copia non riuscita: tieni premuto sul link', 'err'); }
+    } else if ('aggiungi' in d) {
       const r = await modal({ titolo: 'Aggiungi tavoli', html: `<label class="campo">Quanti tavoli aggiungere?<input name="n" type="number" min="1" value="1" inputmode="numeric"></label>`, azioni: [{ id: 'ok', label: 'Aggiungi', cls: 'primario' }] });
       if (!r) return;
       const esistenti = Object.keys(S.tavoli).map(Number).filter(Boolean);

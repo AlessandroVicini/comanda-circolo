@@ -265,3 +265,14 @@ body.reparto-mode main { max-width: none; }
 @keyframes flash { from { background: var(--oro-chiaro); } }
 details.card summary { cursor: pointer; font-weight: 700; }
 code { background: var(--card2); padding: .1rem .35rem; border-radius: 6px; font-size: .88em; word-break: break-all; }
+
+/* ---------- asporto: carico del forno per fascia ---------- */
+.fasce { display: flex; gap: 4px; overflow-x: auto; padding-top: 8px; }
+.fascia { flex: 1 0 34px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.fascia-bar { width: 100%; height: 46px; background: var(--card2); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+.fascia-bar i { display: block; width: 100%; background: var(--verde); border-radius: 6px 6px 0 0; }
+.fascia.piena .fascia-bar i { background: var(--rosso); }
+.fascia small { font-size: .68rem; color: var(--ink2); }
+.fascia b { font-size: .75rem; min-height: 1em; }
+.asp-orario { display: inline-flex; align-items: center; gap: .3rem; background: var(--blu-chiaro); color: var(--blu); font-weight: 800; padding: .1rem .5rem; border-radius: 8px; }
+.asp-orario.ritardo { background: var(--rosso-chiaro); color: var(--rosso); }

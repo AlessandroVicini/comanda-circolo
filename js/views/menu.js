@@ -1,7 +1,7 @@
 import { S, onStore, foodCost, repartiLista, nomeReparto } from '../store.js';
 import { set, update, newKey } from '../db.js';
 import { aggiornaEsauriti } from '../logic.js';
-import { esc, euro, parseNum, toast, conferma, modal, byOrdine, $ } from '../util.js';
+import { esc, euro, parseNum, toast, conferma, modal, byOrdine, $, perAsporto } from '../util.js';
 
 export function mount(main) {
   let filtro = '';
@@ -19,7 +19,7 @@ export function mount(main) {
         return `<tr><td><b>${esc(p.nome)}</b><br><small class="tenue">${esc(S.menu.categorie?.[p.cat]?.nome || '—')}</small></td><td>${esc(nomeReparto(p.reparto))}</td>
           <td class="n">${euro(p.prezzo)}</td><td class="n">${Object.keys(p.ricetta || {}).length ? euro(fc) : '<span class="tenue">—</span>'}</td>
           <td class="n">${Object.keys(p.ricetta || {}).length ? `<span class="tag ${m >= 65 ? 'verde' : m >= 45 ? 'oro' : 'rosso'}">${Math.round(m)}%</span>` : ''}</td>
-          <td>${p.attivo === false ? '<span class="tag">Nascosto</span>' : p.esaurito ? '<span class="tag rosso">Esaurito</span>' : p.esauritoAuto ? '<span class="tag rosso">Manca ingrediente</span>' : '<span class="tag verde">In vendita</span>'}</td>
+          <td>${p.attivo === false ? '<span class="tag">Nascosto</span>' : p.esaurito ? '<span class="tag rosso">Esaurito</span>' : p.esauritoAuto ? '<span class="tag rosso">Manca ingrediente</span>' : '<span class="tag verde">In vendita</span>'}${perAsporto({ ...p, attivo: true }) ? ' <span class="tag blu">🥡 asporto</span>' : ''}</td>
           <td class="n" style="white-space:nowrap"><button class="btn piccolo" data-esaurito="${k}">${p.esaurito ? 'Rimetti' : 'Esaurito'}</button> <button class="btn piccolo piatto" data-mod="${k}" aria-label="Modifica">✎</button></td></tr>`;
       }).join('') || '<tr><td colspan="7" class="tenue">Nessun prodotto.</td></tr>'}
       </tbody></table></div>
@@ -46,6 +46,7 @@ export function mount(main) {
         <label class="campo">Descrizione<input name="descr" value="${esc(p.descr || '')}"></label>
         <label class="campo">Allergeni<input name="allergeni" value="${esc(p.allergeni || '')}" placeholder="es. glutine, latte"></label>
         <label class="check"><input type="checkbox" name="attivo" ${p.attivo !== false ? 'checked' : ''}> Visibile nel menù</label>
+        <label class="check"><input type="checkbox" name="asporto" ${perAsporto({ ...p, attivo: true }) ? 'checked' : ''}> 🥡 Disponibile per l'asporto</label>
       </div><div>
         <h3>Ricetta (scarico magazzino per 1 porzione)</h3>
         <div id="ricetta">${Object.entries(p.ricetta || {}).map(([i, q]) => rigaRicetta(i, q)).join('')}</div>
@@ -70,7 +71,7 @@ export function mount(main) {
     if (!r || r.azione === 'no') return;
     if (r.azione === 'del') { if (await conferma(`Eliminare "${p.nome}" dal menù?`, 'Elimina', 'rosso')) { await set(`pubblico/menu/prodotti/${k}`, null); toast('Eliminato'); } return; }
     const nome = r.form.nome.trim(); if (!nome) return toast('Serve un nome', 'err');
-    const dati = { ...p, nome, prezzo: parseNum(r.form.prezzo), cat: r.form.cat, reparto: r.form.reparto, descr: r.form.descr.trim(), allergeni: r.form.allergeni.trim(), attivo: r.form.attivo, ricetta: r.el._ricetta() };
+    const dati = { ...p, nome, prezzo: parseNum(r.form.prezzo), cat: r.form.cat, reparto: r.form.reparto, descr: r.form.descr.trim(), allergeni: r.form.allergeni.trim(), attivo: r.form.attivo, asporto: r.form.asporto, ricetta: r.el._ricetta() };
     if (!k) dati.ordine = Object.keys(S.menu.prodotti || {}).length + 1;
     await set(`pubblico/menu/prodotti/${k || newKey('pubblico/menu/prodotti')}`, dati);
     toast('Salvato', 'ok'); aggiornaEsauriti();

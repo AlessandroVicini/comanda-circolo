@@ -20,7 +20,7 @@ export function mount(main) {
 
   const render = () => {
     const daConf = ordiniLista(o => o.stato === 'da_confermare');
-    const pronti = ordiniLista(o => o.stato === 'pronto' && o.tavolo !== 'banco');
+    const pronti = ordiniLista(o => o.stato === 'pronto' && o.tavolo !== 'banco' && o.tavolo !== 'asporto');
     if (quanti >= 0 && daConf.length > quanti) { suono('nuovo'); toast('Nuovo ordine dal QR da confermare'); }
     quanti = daConf.length;
     $('#cam-schede', main).innerHTML = [['tavoli', 'Tavoli', 0], ['conferma', 'Da confermare', daConf.length], ['servire', 'Da servire', pronti.length]]
@@ -30,7 +30,7 @@ export function mount(main) {
     if (scheda === 'tavoli') renderTavoli(c);
     else if (scheda === 'conferma') c.innerHTML = daConf.length ? `<div class="tickets">${daConf.map(o => `
       <div class="ticket attesa"><div class="testa"><b>${esc(etichettaOrdine(o))}</b><span class="tenue">${trascorso(o.creato)}</span></div>
-        ${o.socio ? `<div>👤 ${esc(o.socio)}</div>` : ''}${righeHtml(o)}${o.nota ? `<div class="nota-ord">📝 ${esc(o.nota)}</div>` : ''}
+        ${o.socio ? `<div>👤 ${esc(o.socio)}</div>` : ''}${o.tavolo === 'asporto' ? `<div>🥡 Asporto da casa · ritiro <b>${esc(o.ritiro || '')}</b>${o.cliente?.tel ? ` · <a href="tel:${esc(o.cliente.tel)}">${esc(o.cliente.tel)}</a>` : ''}</div>` : ''}${righeHtml(o)}${o.nota ? `<div class="nota-ord">📝 ${esc(o.nota)}</div>` : ''}
         <div class="riga sp"><b>${euro(totaleRighe(o.righe))}</b><span class="tag">dal QR</span></div>
         <div class="riga"><button class="btn rosso" data-rifiuta="${o.id}">Rifiuta</button><button class="btn primario cresci" data-conferma="${o.id}">Conferma e invia</button></div>
       </div>`).join('')}</div>` : '<div class="vuoto">Nessun ordine dal QR in attesa.</div>';

@@ -54,7 +54,9 @@ export const repartiLista = () => Object.entries(S.info.reparti || {}).sort((a, 
 export const nomeReparto = k => (S.info.reparti?.[k]?.nome) || (k ? k : 'Nessuna preparazione');
 export const tavoliLista = () => Object.entries(S.tavoli).filter(([, t]) => t.attivo !== false).sort((a, b) => (parseInt(a[0]) || 0) - (parseInt(b[0]) || 0) || a[0].localeCompare(b[0]));
 export const prodottiAttivi = () => Object.entries(S.menu.prodotti || {}).filter(([, p]) => p.attivo !== false);
-export const etichettaOrdine = o => o.tavolo === 'banco' ? `Banco #${o.num || '?'}` : `Tavolo ${o.tavolo}`;
+export const etichettaOrdine = o => o.tavolo === 'banco' ? `Banco #${o.num || '?'}`
+  : o.tavolo === 'asporto' ? `Asporto ${o.ritiro || ''} · ${o.cliente?.nome || '#' + (o.num || '?')}`
+  : `Tavolo ${o.tavolo}`;
 export const aperto = o => o.stato !== 'annullato' && o.stato !== 'da_confermare';
 export function sottoScorta() {
   return Object.entries(S.ingr).filter(([, i]) => (Number(i.giacenza) || 0) <= (Number(i.soglia) || 0));

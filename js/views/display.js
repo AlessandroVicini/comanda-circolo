@@ -19,8 +19,10 @@ export function mount(main) {
     const pronti = ordiniLista(o => o.stato === 'pronto');
     const gruppi = new Map(); // etichetta -> {ids, ts}
     for (const o of pronti) {
-      const k = o.tavolo === 'banco' ? 'b' + o.num : 't' + o.tavolo;
-      const g = gruppi.get(k) || { ids: [], ts: 0, numero: o.tavolo === 'banco' ? o.num : (S.tavoli[o.tavolo]?.nome || o.tavolo), tipo: o.tavolo === 'banco' ? 'Numero' : 'Tavolo' };
+      const asp = o.tavolo === 'asporto';
+      const k = o.tavolo === 'banco' ? 'b' + o.num : asp ? 'a' + o.id : 't' + o.tavolo;
+      const g = gruppi.get(k) || { ids: [], ts: 0, numero: o.tavolo === 'banco' || asp ? o.num : (S.tavoli[o.tavolo]?.nome || o.tavolo),
+        tipo: o.tavolo === 'banco' ? 'Numero' : asp ? '🥡 ' + String(o.cliente?.nome || 'Asporto').slice(0, 14) : 'Tavolo' };
       g.ids.push(o.id); g.ts = Math.max(g.ts, o.prontoTs || 0); gruppi.set(k, g);
     }
     const lista = [...gruppi.values()].sort((a, b) => b.ts - a.ts);

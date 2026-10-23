@@ -66,6 +66,7 @@ export function seedTree(nTavoli = 12) {
   };
   const tavoli = {}, qr = {};
   for (let i = 1; i <= nTavoli; i++) { tavoli[i] = { nome: String(i), attivo: true }; qr[i] = token(); }
+  qr.asporto = token() + token();
   return {
     pubblico: {
       info: {
@@ -73,6 +74,7 @@ export function seedTree(nTavoli = 12) {
         qrAttivo: true,
         serata: null,
         msgPronto: 'Il tuo ordine è pronto: passa a ritirarlo al banco!',
+        asporto: { attivo: true, online: true, inizio: '19:00', fine: '22:00', passo: 15, maxPerFascia: 6, anticipo: 20 },
         reparti: {
           cucina:   { nome: 'Cucina',   ordine: 1 },
           pizzeria: { nome: 'Pizzeria', ordine: 2 },

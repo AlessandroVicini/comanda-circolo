@@ -106,3 +106,36 @@ export const csvCell = v => { const s = String(v ?? ''); return /[;"\n]/.test(s)
 export const csvNum = n => (Number(n) || 0).toFixed(2).replace('.', ',');
 
 export const byOrdine = (a, b) => (a[1].ordine ?? 999) - (b[1].ordine ?? 999) || String(a[1].nome).localeCompare(String(b[1].nome));
+
+/* ---------- asporto ---------- */
+export const ASPORTO_DEFAULT = { attivo: true, online: true, inizio: '19:00', fine: '22:00', passo: 15, maxPerFascia: 6, anticipo: 20 };
+export const cfgAsporto = info => ({ ...ASPORTO_DEFAULT, ...((info && info.asporto) || {}) });
+// un prodotto è da asporto se lo dice il menù; se non è indicato, valgono le pizze
+export const perAsporto = p => !!p && p.attivo !== false && (p.asporto === true || (p.asporto === undefined && p.cat === 'pizze'));
+const minuti = hhmm => { const [h, m] = String(hhmm || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const hhmm = min => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+export function fasceAsporto(cfg) {
+  const a = minuti(cfg.inizio); let b = minuti(cfg.fine); if (b <= a) b += 24 * 60;
+  const passo = Math.max(5, Number(cfg.passo) || 15), out = [];
+  for (let t = a; t <= b; t += passo) out.push(hhmm(t));
+  return out;
+}
+// timestamp del ritiro: la serata è la data, l'orario può passare la mezzanotte
+export function tsRitiro(serata, fascia) {
+  const [y, mo, d] = String(serata).split('-').map(Number);
+  const m = minuti(fascia);
+  const dt = new Date(y, (mo || 1) - 1, d || 1, Math.floor(m / 60), m % 60);
+  if (m < 6 * 60) dt.setDate(dt.getDate() + 1);
+  return dt.getTime();
+}
+export const pezziDi = righe => (righe || []).reduce((s, r) => s + (Number(r.qta) || 0), 0);
+export function codice(n = 16) {
+  const a = new Uint8Array(n); crypto.getRandomValues(a);
+  return Array.from(a, b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
+}
+export const telLink = t => String(t || '').replace(/[^\d+]/g, '');
+export function waLink(tel, testo) {
+  let n = telLink(tel).replace(/^\+/, '');
+  if (n && !n.startsWith('39') && n.length <= 10) n = '39' + n;
+  return `https://wa.me/${n}?text=${encodeURIComponent(testo)}`;
+}
