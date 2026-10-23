@@ -20,7 +20,7 @@ export async function mount(main, [tok]) {
     <div id="a-avvisi"></div><div id="a-miei" class="miei"></div><div id="a-menu"></div>
     <div class="carrello" id="a-carr" hidden></div>`;
 
-  const menuAsporto = () => ({ categorie: menu.categorie || {}, prodotti: Object.fromEntries(Object.entries(menu.prodotti || {}).filter(([, p]) => perAsporto(p))) });
+  const menuAsporto = () => ({ categorie: menu.categorie || {}, prodotti: Object.fromEntries(Object.entries(menu.prodotti || {}).filter(([, p]) => perAsporto(p, menu.categorie))) });
   const aperto = () => { const c = cfgAsporto(info); return !!(info.serata && c.attivo && c.online); };
   const fasceLibere = (pezzi = 0) => {
     const c = cfgAsporto(info), ora = Date.now() + (Number(c.anticipo) || 0) * 60000;
@@ -32,8 +32,11 @@ export async function mount(main, [tok]) {
 
   const renderTesta = () => {
     $('#a-nome', main).textContent = info.nome || 'Asporto';
-    const libere = aperto() ? fasceLibere(1).filter(x => x.ok) : [];
+    const future = aperto() ? fasceLibere(1) : [], libere = future.filter(x => x.ok);
+    const nPizze = Object.values(menuAsporto().prodotti).length;
     $('#a-sotto', main).innerHTML = !aperto() ? '<span class="tag rosso">Ordini da asporto chiusi in questo momento</span>'
+      : !nPizze ? '<span class="tag rosso">Al momento non ci sono pizze da asporto nel menù</span>'
+      : !future.length ? '<span class="tag rosso">Per stasera gli orari di ritiro sono terminati</span>'
       : libere.length ? `Scegli le pizze, l'orario di ritiro e invia: ti confermiamo l'ordine e ti avvisiamo quando è pronto.`
       : '<span class="tag rosso">Stasera gli orari di ritiro sono tutti pieni</span>';
   };
@@ -85,7 +88,7 @@ export async function mount(main, [tok]) {
     if (!nome) return toast('Scrivi il tuo nome', 'err');
     if (!fasceLibere(carrello.pezzi()).find(x => x.f === r.form.ritiro && x.ok)) return toast('Quell\'orario si è appena riempito: scegline un altro', 'err');
     localStorage.setItem('nome-socio', nome); if (tel) localStorage.setItem('tel-asporto', tel);
-    const righe = carrello.righe(menu.prodotti).filter(x => perAsporto(menu.prodotti[x.pid]));
+    const righe = carrello.righe(menu.prodotti).filter(x => perAsporto(menu.prodotti[x.pid], menu.categorie));
     const k = codice(), id = newKey('ordini');
     const ordine = {
       tavolo: 'asporto', token: tok, avviso: k, uid: db.user?.uid || 'ospite', origine: 'asporto_online', stato: 'da_confermare',
@@ -116,7 +119,7 @@ export async function mount(main, [tok]) {
       if (info.serata !== serataSub) { serataSub = info.serata; unFasce && unFasce(); unFasce = info.serata ? on(`pubblico/asporto/${info.serata}`, f => { prenotate = f || {}; renderTesta(); }) : null; }
       renderTesta(); renderMenu(); renderMiei();
     }),
-    on('pubblico/menu', v => { menu = v || { categorie: {}, prodotti: {} }; menu.prodotti ||= {}; renderMenu(); }),
+    on('pubblico/menu', v => { menu = v || { categorie: {}, prodotti: {} }; menu.prodotti ||= {}; renderTesta(); renderMenu(); }),
   ];
   ascoltaMiei(); renderAvvisi(); renderMiei();
   return () => { un.forEach(u => u()); unFasce && unFasce(); Object.values(unAvvisi).forEach(u => u()); };

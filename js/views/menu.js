@@ -19,7 +19,7 @@ export function mount(main) {
         return `<tr><td><b>${esc(p.nome)}</b><br><small class="tenue">${esc(S.menu.categorie?.[p.cat]?.nome || '—')}</small></td><td>${esc(nomeReparto(p.reparto))}</td>
           <td class="n">${euro(p.prezzo)}</td><td class="n">${Object.keys(p.ricetta || {}).length ? euro(fc) : '<span class="tenue">—</span>'}</td>
           <td class="n">${Object.keys(p.ricetta || {}).length ? `<span class="tag ${m >= 65 ? 'verde' : m >= 45 ? 'oro' : 'rosso'}">${Math.round(m)}%</span>` : ''}</td>
-          <td>${p.attivo === false ? '<span class="tag">Nascosto</span>' : p.esaurito ? '<span class="tag rosso">Esaurito</span>' : p.esauritoAuto ? '<span class="tag rosso">Manca ingrediente</span>' : '<span class="tag verde">In vendita</span>'}${perAsporto({ ...p, attivo: true }) ? ' <span class="tag blu">🥡 asporto</span>' : ''}</td>
+          <td>${p.attivo === false ? '<span class="tag">Nascosto</span>' : p.esaurito ? '<span class="tag rosso">Esaurito</span>' : p.esauritoAuto ? '<span class="tag rosso">Manca ingrediente</span>' : '<span class="tag verde">In vendita</span>'}${perAsporto({ ...p, attivo: true }, S.menu.categorie) ? ' <span class="tag blu">🥡 asporto</span>' : ''}</td>
           <td class="n" style="white-space:nowrap"><button class="btn piccolo" data-esaurito="${k}">${p.esaurito ? 'Rimetti' : 'Esaurito'}</button> <button class="btn piccolo piatto" data-mod="${k}" aria-label="Modifica">✎</button></td></tr>`;
       }).join('') || '<tr><td colspan="7" class="tenue">Nessun prodotto.</td></tr>'}
       </tbody></table></div>
@@ -46,7 +46,7 @@ export function mount(main) {
         <label class="campo">Descrizione<input name="descr" value="${esc(p.descr || '')}"></label>
         <label class="campo">Allergeni<input name="allergeni" value="${esc(p.allergeni || '')}" placeholder="es. glutine, latte"></label>
         <label class="check"><input type="checkbox" name="attivo" ${p.attivo !== false ? 'checked' : ''}> Visibile nel menù</label>
-        <label class="check"><input type="checkbox" name="asporto" ${perAsporto({ ...p, attivo: true }) ? 'checked' : ''}> 🥡 Disponibile per l'asporto</label>
+        <label class="check"><input type="checkbox" name="asporto" ${perAsporto({ ...p, attivo: true }, S.menu.categorie) ? 'checked' : ''}> 🥡 Disponibile per l'asporto</label>
       </div><div>
         <h3>Ricetta (scarico magazzino per 1 porzione)</h3>
         <div id="ricetta">${Object.entries(p.ricetta || {}).map(([i, q]) => rigaRicetta(i, q)).join('')}</div>

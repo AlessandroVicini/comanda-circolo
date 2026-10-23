@@ -105,7 +105,7 @@ export function mount(main) {
       <div class="fasce">${fasce.map(f => { const n = occupate[f] || 0, pct = cfg.maxPerFascia ? Math.min(100, n / cfg.maxPerFascia * 100) : 0;
         return `<div class="fascia ${n >= cfg.maxPerFascia ? 'piena' : ''}" title="${f}: ${n} pizze"><div class="fascia-bar"><i style="height:${pct}%"></i></div><small>${f}</small><b>${n || ''}</b></div>`; }).join('')}</div></div>`;
     if (nuovoAsp) {
-      const menuAsp = { categorie: S.menu.categorie, prodotti: Object.fromEntries(Object.entries(S.menu.prodotti || {}).filter(([, p]) => perAsporto(p))) };
+      const menuAsp = { categorie: S.menu.categorie, prodotti: Object.fromEntries(Object.entries(S.menu.prodotti || {}).filter(([, p]) => perAsporto(p, S.menu.categorie))) };
       const pezzi = carAsp.pezzi(), tot = carAsp.totale(S.menu.prodotti);
       c.innerHTML = barra + `<div class="griglia g2" style="align-items:start">
         <div><div class="riga"><button class="btn piatto" data-chiudi-asp>← Elenco asporti</button></div>${htmlMenu(menuAsp, carAsp, { conNote: true })}</div>

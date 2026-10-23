@@ -102,7 +102,7 @@ export async function rettificaMagazzino(ing, contata, nota = '') {
 export async function creaOrdineStaff({ tavolo, righe, nota = '', socio = '', origine = 'cameriere', pagato = false, cliente = null, ritiro = null }) {
   const serata = await assicuraSerata();
   const asporto = tavolo === 'asporto';
-  if (asporto) righe = righe.filter(r => perAsporto(S.menu.prodotti?.[r.pid]));
+  if (asporto) righe = righe.filter(r => perAsporto(S.menu.prodotti?.[r.pid], S.menu.categorie));
   const id = newKey('ordini');
   const reparti = repartiDi(righe);
   const daPreparare = Object.keys(reparti).length > 0;
@@ -129,7 +129,7 @@ export async function creaOrdineStaff({ tavolo, righe, nota = '', socio = '', or
 export async function confermaOrdine(id) {
   const o = S.ordini[id]; if (!o || o.stato !== 'da_confermare') return;
   // ricalcola i prezzi dal menù (il cliente non può modificarli)
-  const righe = (o.righe || []).filter(r => o.tavolo !== 'asporto' || perAsporto(S.menu.prodotti?.[r.pid])).map(r => {
+  const righe = (o.righe || []).filter(r => o.tavolo !== 'asporto' || perAsporto(S.menu.prodotti?.[r.pid], S.menu.categorie)).map(r => {
     const p = S.menu.prodotti?.[r.pid];
     return { ...r, nome: p?.nome || r.nome, prezzo: p ? Number(p.prezzo) : Number(r.prezzo) || 0, reparto: p ? (p.reparto || '') : (r.reparto || '') };
   });

@@ -110,8 +110,9 @@ export const byOrdine = (a, b) => (a[1].ordine ?? 999) - (b[1].ordine ?? 999) ||
 /* ---------- asporto ---------- */
 export const ASPORTO_DEFAULT = { attivo: true, online: true, inizio: '19:00', fine: '22:00', passo: 15, maxPerFascia: 6, anticipo: 20 };
 export const cfgAsporto = info => ({ ...ASPORTO_DEFAULT, ...((info && info.asporto) || {}) });
-// un prodotto è da asporto se lo dice il menù; se non è indicato, valgono le pizze
-export const perAsporto = p => !!p && p.attivo !== false && (p.asporto === true || (p.asporto === undefined && p.cat === 'pizze'));
+// un prodotto è da asporto se lo dice il menù; se non è indicato, valgono le pizze (categoria che contiene "pizz")
+export const perAsporto = (p, categorie) => !!p && p.attivo !== false && (p.asporto === true ||
+  (p.asporto === undefined && (p.cat === 'pizze' || /pizz/i.test(String(categorie?.[p.cat]?.nome || '')))));
 const minuti = hhmm => { const [h, m] = String(hhmm || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
 const hhmm = min => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 export function fasceAsporto(cfg) {
