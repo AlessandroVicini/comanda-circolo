@@ -9,8 +9,15 @@
 //  del database (file database.rules.json).
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const FIREBASE_CONFIG = null;
-
+export const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDO0P8fKGyKIFqfGTHN5zZEyfXG2ErovvM",
+  authDomain: "comanda-circolo.firebaseapp.com",
+  databaseURL: "https://comanda-circolo-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "comanda-circolo",
+  storageBucket: "comanda-circolo.firebasestorage.app",
+  messagingSenderId: "1029007089150",
+  appId: "1:1029007089150:web:7e77a01e3ca6e9843d34af"
+};
 /* Esempio di come deve diventare:
 export const FIREBASE_CONFIG = {
   apiKey: "AIza...",
