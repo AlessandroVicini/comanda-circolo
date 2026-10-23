@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "pubblico": {
+      ".read": true,
+      ".write": "auth != null && root.child('staff').child(auth.uid).exists()"
+    },
+
+    "staff": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('staff').child(auth.uid).child('admin').val() === true",
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid && !root.child('staff').exists() && auth.token.firebase.sign_in_provider === 'password' && newData.child('admin').val() === true"
+      }
+    },
+
+    "richieste": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('staff').child(auth.uid).child('admin').val() === true",
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid && auth.token.firebase.sign_in_provider === 'password'"
+      }
+    },
+
+    "ordini": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('staff').child(auth.uid).exists()",
+      ".indexOn": ["serata"],
+      "$id": {
+        ".write": "!data.exists() && auth != null && newData.child('origine').val() === 'qr' && newData.child('stato').val() === 'da_confermare' && newData.child('uid').val() === auth.uid && newData.child('pagato').val() === false && root.child('pubblico/info/qrAttivo').val() === true && newData.child('serata').val() === root.child('pubblico/info/serata').val() && newData.child('tavolo').isString() && root.child('qr').child(newData.child('tavolo').val()).val() === newData.child('token').val() && newData.child('avviso').val() === newData.child('token').val()"
+      }
+    },
+
+    "avvisi": {
+      ".write": "auth != null && root.child('staff').child(auth.uid).exists()",
+      "$chiave": {
+        ".read": true
+      }
+    },
+
+    "qr":        { ".read": "auth != null && root.child('staff').child(auth.uid).exists()", ".write": "auth != null && root.child('staff').child(auth.uid).exists()" },
+    "tavoli":    { ".read": "auth != null && root.child('staff').child(auth.uid).exists()", ".write": "auth != null && root.child('staff').child(auth.uid).exists()" },
+    "magazzino": { ".read": "auth != null && root.child('staff').child(auth.uid).exists()", ".write": "auth != null && root.child('staff').child(auth.uid).exists()" },
+    "movimenti": { ".read": "auth != null && root.child('staff').child(auth.uid).exists()", ".write": "auth != null && root.child('staff').child(auth.uid).exists()" },
+    "serate":    { ".read": "auth != null && root.child('staff').child(auth.uid).exists()", ".write": "auth != null && root.child('staff').child(auth.uid).exists()" },
+    "stato":     { ".read": "auth != null && root.child('staff').child(auth.uid).exists()", ".write": "auth != null && root.child('staff').child(auth.uid).exists()" }
+  }
+}

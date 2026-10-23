@@ -1,0 +1,10 @@
+{
+  "name": "Comanda Circolo",
+  "short_name": "Comanda",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f0e4",
+  "theme_color": "#1d5a4e",
+  "lang": "it",
+  "icons": [{ "src": "icona.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
